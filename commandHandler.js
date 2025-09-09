@@ -15,10 +15,16 @@ const commandHandler = {
         }
     },
     getSlashCommandData(client) {
-        return Array.from(client.commands.values()).map(cmd => ({
-            name: cmd.name,
-            description: cmd.description || 'Nincs leírás',
-        }));
+        return Array.from(client.commands.values()).map(cmd => {
+            const data = {
+                name: cmd.name,
+                description: cmd.description || 'Nincs leírás',
+            };
+            if (cmd.options) {
+                data.options = cmd.options;
+            }
+            return data;
+        });
     },
     async registerCommands(client, token, clientId) {
         const commands = this.getSlashCommandData(client);
