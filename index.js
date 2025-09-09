@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, DefaultWebSocketManagerOptions } = require('discord.js');
 //szia
 // Create a new client instance
 const client = new Client({
@@ -8,10 +8,20 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
     ]
 });
+const commandHandler = require('./commandHandler');
+const interactionHandler = require('./interactionHandler');
 
-// When the client is ready, run this code (only once)
-client.once('ready', () => {
-    console.log('Bot is ready!');
+// Commandok betöltése és regisztrálása
+commandHandler.loadCommands(client);
+commandHandler.registerCommands(
+    client,
+    process.env.DISCORD_TOKEN,
+    process.env.CLIENT_ID
+);
+interactionHandler(client);
+
+client.once('clientReady', () => {
+    console.log('A faóra készenáll a termeszekre!');
 });
 
 // Login to Discord with your client's token
