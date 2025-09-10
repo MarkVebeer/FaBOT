@@ -1,6 +1,7 @@
 module.exports = {
     name: 'echo',
     description: 'Kiír egy üzenetet ugyanabba a csatornába, és ephemerallal válaszol.',
+    devonly: true,
     options: [
         {
             name: 'text',

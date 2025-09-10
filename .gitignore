@@ -1,2 +1,6 @@
 node_modules/
 .env
+# React frontend
+web/client/node_modules/
+web/client/build/
+web/.env
