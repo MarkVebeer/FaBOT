@@ -66,16 +66,34 @@ const { getBotGuilds } = require('./botGuilds');
 
 // API endpoint Reactnek
 app.get('/api/dashboard', async (req, res) => {
-    if (!req.session.user) return res.json({ user: null });
-    const userGuilds = req.session.guilds || [];
-    const botGuilds = await getBotGuilds();
-    const guildsWithBot = userGuilds.filter(g => botGuilds.some(bg => bg.id === g.id));
-    res.json({
-        user: req.session.user,
-        guilds: guildsWithBot,
-        client_id: CLIENT_ID,
-        bot_permissions: BOT_INVITE_PERMISSIONS
-    });
+    if (!req.session.user || !req.session.access_token) return res.json({ user: null });
+
+    try {
+        // Fetch user guilds from Discord API
+        const guildRes = await axios.get('https://discord.com/api/users/@me/guilds', {
+            headers: { Authorization: `Bearer ${req.session.access_token}` }
+        });
+        const userGuilds = guildRes.data;
+
+        const botGuilds = await getBotGuilds();
+
+        // Filter guilds where the user has MANAGE_SERVER permission (0x20)
+        const guildsWithBot = userGuilds.filter(g => {
+            const hasManageServerPermission = (g.permissions & 0x20) === 0x20;
+            const botIsInGuild = botGuilds.some(bg => bg.id === g.id);
+            return hasManageServerPermission && botIsInGuild;
+        });
+
+        res.json({
+            user: req.session.user,
+            guilds: guildsWithBot,
+            client_id: CLIENT_ID,
+            bot_permissions: BOT_INVITE_PERMISSIONS
+        });
+    } catch (err) {
+        console.error('Error fetching guilds:', err.message);
+        res.status(500).json({ error: 'Failed to fetch guilds' });
+    }
 });
 
 // Logout
