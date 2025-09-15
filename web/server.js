@@ -103,8 +103,6 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// Home
-
 // React build kiszolgálása
 const clientBuildPath = path.join(__dirname, 'client', 'build');
 if (fs.existsSync(clientBuildPath)) {
