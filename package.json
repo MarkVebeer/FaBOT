@@ -4,7 +4,7 @@
   "description": "A simple Discord bot",
   "main": "index.js",
   "scripts": {
-    "web": "node web/server.js",
+    "server": "node web/server.js",
     "bot": "node index.js",
     "all": "npm-run-all --parallel bot server",
     "setup": "npm install && cd web/client && npm install && npm run build"

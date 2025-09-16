@@ -2,3 +2,10 @@
 # Discord Token
 DISCORD_TOKEN="token :)"
 CLIENT_ID="client id :)"
+DEV_USER_IDS=
+CLIENT_ID=
+CLIENT_SECRET=
+REDIRECT_URI=http://localhost:3000/callback
+SESSION_SECRET=
+WEB_PORT=
+BOT_INVITE_PERMISSIONS=
