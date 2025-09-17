@@ -25,6 +25,14 @@ function App() {
     window.location.href = '/logout';
   };
 
+  const handleRefresh = async () => {
+    const res = await fetch('/api/refresh-guilds', { method: 'POST' });
+    if (res.ok) {
+      const data = await res.json();
+      setGuilds(data.guilds);
+    }
+  };
+
   return (
     <div style={{ padding: 32 }}>
       {!user ? (
@@ -33,6 +41,7 @@ function App() {
         <>
           <h1>Üdv, {user.username}!</h1>
           <button onClick={handleLogout}>Kijelentkezés</button>
+          <button style={{ marginLeft: 12 }} onClick={handleRefresh}>Frissítés</button>
           <div style={{ margin: '20px 0' }}>
             <a
               href={`https://discord.com/oauth2/authorize?client_id=${clientId}&scope=bot&permissions=${botPermissions}`}
