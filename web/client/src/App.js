@@ -5,6 +5,8 @@ function App() {
   const [guilds, setGuilds] = useState([]);
   const [clientId, setClientId] = useState('');
   const [botPermissions, setBotPermissions] = useState('8');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
 
   useEffect(() => {
     fetch('/api/dashboard')
@@ -26,10 +28,23 @@ function App() {
   };
 
   const handleRefresh = async () => {
-    const res = await fetch('/api/refresh-guilds', { method: 'POST' });
-    if (res.ok) {
-      const data = await res.json();
-      setGuilds(data.guilds);
+    if (isRefreshing) return; // Prevent spam clicking
+    
+    setIsRefreshing(true);
+    setRefreshError('');
+    
+    try {
+      const res = await fetch('/api/refresh-guilds', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setGuilds(data.guilds);
+      } else {
+        setRefreshError('Hiba a frissítés során. Próbáld újra pár másodperc múlva.');
+      }
+    } catch (err) {
+      setRefreshError('Hálózati hiba. Próbáld újra.');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -41,7 +56,22 @@ function App() {
         <>
           <h1>Üdv, {user.username}!</h1>
           <button onClick={handleLogout}>Kijelentkezés</button>
-          <button style={{ marginLeft: 12 }} onClick={handleRefresh}>Frissítés</button>
+          <button 
+            style={{ 
+              marginLeft: 12, 
+              opacity: isRefreshing ? 0.6 : 1,
+              cursor: isRefreshing ? 'not-allowed' : 'pointer'
+            }} 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Frissítés...' : 'Frissítés'}
+          </button>
+          {refreshError && (
+            <div style={{ color: 'red', marginTop: 10, fontSize: 14 }}>
+              {refreshError}
+            </div>
+          )}
           <div style={{ margin: '20px 0' }}>
             <a
               href={`https://discord.com/oauth2/authorize?client_id=${clientId}&scope=bot&permissions=${botPermissions}`}
@@ -65,6 +95,9 @@ function App() {
                   />
                 )}
                 {guild.name}
+                <a href={`/dashboard/${guild.id}`} style={{ marginLeft: 12 }}>
+                  <button>Megnyitás</button>
+                </a>
               </li>
             ))}
           </ul>
