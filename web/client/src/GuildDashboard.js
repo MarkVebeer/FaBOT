@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 
 function GuildDashboard() {
   const { guildId } = useParams();
@@ -10,6 +10,12 @@ function GuildDashboard() {
   const [selectedChannel, setSelectedChannel] = useState('');
   const [message, setMessage] = useState('');
   const [sendStatus, setSendStatus] = useState('');
+
+  // Server settings state
+  const [welcomeEnabled, setWelcomeEnabled] = useState(false);
+  const [farewellEnabled, setFarewellEnabled] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [farewellMessage, setFarewellMessage] = useState('');
 
 
   // Minden mount/guildId váltáskor ellenőrizzük a jogosultságokat
@@ -87,6 +93,19 @@ function GuildDashboard() {
     }
   }, [hasPermission, guildId, navigate]);
 
+  useEffect(() => {
+    // Fetch server settings
+    fetch(`/api/server-settings/${guildId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setWelcomeEnabled(data.welcome_enabled || false);
+        setFarewellEnabled(data.farewell_enabled || false);
+        setWelcomeMessage(data.welcome_message || '');
+        setFarewellMessage(data.farewell_message || '');
+      })
+      .catch((err) => console.error('Error fetching server settings:', err));
+  }, [guildId]);
+
   const handleSend = async () => {
     setSendStatus('');
     if (!selectedChannel || !message) {
@@ -120,6 +139,23 @@ function GuildDashboard() {
     }
   };
 
+  const handleSettingsSubmit = (e) => {
+    e.preventDefault();
+    fetch(`/api/server-settings/${guildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channelId: selectedChannel,
+        welcomeEnabled,
+        farewellEnabled,
+        welcomeMessage,
+        farewellMessage,
+      }),
+    })
+      .then(() => alert('Settings updated successfully!'))
+      .catch((err) => alert('Failed to update settings.'));  
+  };
+
   if (hasPermission === null) return <div>Jogosultság ellenőrzése...</div>;
   if (!hasPermission) return <div>Nincs jogosultságod ehhez a szerverhez! <button onClick={() => navigate('/')}>Vissza</button></div>;
   if (!guild) return <div>Szerver betöltése...</div>;
@@ -149,7 +185,55 @@ function GuildDashboard() {
       <button onClick={handleSend}>Küldés</button>
       {sendStatus && <div style={{ marginTop: 12 }}>{sendStatus}</div>}
       <hr style={{ margin: '24px 0' }} />
-      <button onClick={() => navigate('/')}>Vissza a főoldalra</button>
+      <div>
+        <h3>Szerver beállításai</h3>
+        <form onSubmit={handleSettingsSubmit}>
+          <div>
+            <label>
+              Üdvözlő üzenet engedélyezése:
+              <input
+                type="checkbox"
+                checked={welcomeEnabled}
+                onChange={(e) => setWelcomeEnabled(e.target.checked)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Üdvözlő üzenet:
+              <textarea
+                value={welcomeMessage}
+                onChange={(e) => setWelcomeMessage(e.target.value)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Búcsú üzenet engedélyezése:
+              <input
+                type="checkbox"
+                checked={farewellEnabled}
+                onChange={(e) => setFarewellEnabled(e.target.checked)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Búcsú üzenet:
+              <textarea
+                value={farewellMessage}
+                onChange={(e) => setFarewellMessage(e.target.value)}
+              />
+            </label>
+          </div>
+          <button type="submit">Beállítások mentése</button>
+        </form>
+      </div>
+      <div style={{ marginTop: 32 }}>
+        <Link to={`/server-settings/${guildId}`} style={{ textDecoration: 'none', color: 'blue' }}>
+          Szerver beállításainak konfigurálása
+        </Link>
+      </div>
     </div>
   );
 }

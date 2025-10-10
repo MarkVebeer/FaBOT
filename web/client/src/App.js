@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import ServerSettings from './ServerSettings';
+import GuildDashboard from './GuildDashboard';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -103,6 +106,10 @@ function App() {
           </ul>
         </>
       )}
+      <Routes>
+        <Route path="/server-settings/:serverId" element={<ServerSettings />} />
+        <Route path="/dashboard/:guildId" element={<GuildDashboard />} />
+      </Routes>
     </div>
   );
 }

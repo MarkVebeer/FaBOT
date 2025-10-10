@@ -175,6 +175,7 @@ const session = require('express-session');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const db = require('./database');
 
 const app = express();
 // Middleware-t csak azokra az endpointokra tesszük, ahol kell
@@ -395,7 +396,46 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// React build kiszolgálása
+// Server settings API
+app.get('/api/server-settings/:serverId', (req, res) => {
+    const { serverId } = req.params;
+    db.get('SELECT * FROM server_settings WHERE server_id = ?', [serverId], (err, row) => {
+        if (err) {
+            console.error('Error fetching server settings:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.json(row || {});
+        }
+    });
+});
+
+app.post('/api/server-settings/:serverId', (req, res) => {
+    const { serverId } = req.params;
+    const { channelId, welcomeEnabled, farewellEnabled, welcomeMessage, farewellMessage } = req.body;
+
+    db.run(
+        `INSERT INTO server_settings (server_id, channel_id, welcome_enabled, farewell_enabled, welcome_message, farewell_message, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(server_id) DO UPDATE SET
+           channel_id = excluded.channel_id,
+           welcome_enabled = excluded.welcome_enabled,
+           farewell_enabled = excluded.farewell_enabled,
+           welcome_message = excluded.welcome_message,
+           farewell_message = excluded.farewell_message,
+           updated_at = CURRENT_TIMESTAMP`,
+        [serverId, channelId, welcomeEnabled, farewellEnabled, welcomeMessage, farewellMessage],
+        (err) => {
+            if (err) {
+                console.error('Error updating server settings:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+            } else {
+                res.json({ message: 'Server settings updated successfully' });
+            }
+        }
+    );
+});
+
+// Serve static files
 const clientBuildPath = path.join(__dirname, 'client', 'build');
 if (fs.existsSync(clientBuildPath)) {
     app.use(express.static(clientBuildPath));
@@ -406,3 +446,30 @@ if (fs.existsSync(clientBuildPath)) {
 
 app.listen(PORT, () => {});
 console.log("Server is running on port " + PORT);
+
+// Example usage of the database
+function addGuild(id, name) {
+  db.run('INSERT INTO guilds (id, name) VALUES (?, ?)', [id, name], (err) => {
+    if (err) {
+      console.error('Error adding guild:', err.message);
+    } else {
+      console.log(`Guild ${name} added successfully.`);
+    }
+  });
+}
+
+function getGuilds(callback) {
+  db.all('SELECT * FROM guilds', [], (err, rows) => {
+    if (err) {
+      console.error('Error fetching guilds:', err.message);
+      callback(err, null);
+    } else {
+      callback(null, rows);
+    }
+  });
+}
+
+module.exports = {
+  addGuild,
+  getGuilds,
+};
